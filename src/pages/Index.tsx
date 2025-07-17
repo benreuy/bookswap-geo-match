@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -93,8 +94,8 @@ const Index = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Search for books you want to read nearby
               </p>
-              <Button disabled className="w-full">
-                Coming Soon
+              <Button onClick={() => navigate('/find-books')} className="w-full">
+                Browse Books
               </Button>
             </div>
             <div className="p-6 border rounded-lg text-center">
