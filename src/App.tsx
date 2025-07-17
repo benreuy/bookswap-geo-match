@@ -7,9 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Library from "./pages/Library";
-import FindBooks from "./pages/FindBooks";
+import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/useAuth";
+import { Layout } from "./components/Layout";
 
 const queryClient = new QueryClient();
 
@@ -21,11 +22,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/find-books" element={<FindBooks />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/" element={<Layout><Index /></Layout>} />
+            <Route path="/library" element={<Layout><Library /></Layout>} />
+            <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

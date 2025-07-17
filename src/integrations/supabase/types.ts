@@ -92,6 +92,48 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlists: {
+        Row: {
+          author: string
+          created_at: string
+          description: string | null
+          genre: string | null
+          id: string
+          isbn: string | null
+          notes: string | null
+          priority: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          isbn?: string | null
+          notes?: string | null
+          priority?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          isbn?: string | null
+          notes?: string | null
+          priority?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
