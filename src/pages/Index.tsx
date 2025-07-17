@@ -1,11 +1,95 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Signed out successfully',
+      });
+      navigate('/auth');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to sign out',
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to auth
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">BookSwap</h1>
+            <p className="text-xl text-muted-foreground">
+              Welcome back, {user.user_metadata?.full_name || user.email}!
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </div>
+        
+        <div className="text-center py-16">
+          <h2 className="text-2xl font-semibold mb-4">Your Book Swapping Journey Starts Here</h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Connect with fellow book lovers and discover your next great read.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="p-6 border rounded-lg">
+              <h3 className="font-semibold mb-2">List Your Books</h3>
+              <p className="text-sm text-muted-foreground">
+                Upload books you're willing to swap with others
+              </p>
+            </div>
+            <div className="p-6 border rounded-lg">
+              <h3 className="font-semibold mb-2">Find Books</h3>
+              <p className="text-sm text-muted-foreground">
+                Search for books you want to read nearby
+              </p>
+            </div>
+            <div className="p-6 border rounded-lg">
+              <h3 className="font-semibold mb-2">Make Swaps</h3>
+              <p className="text-sm text-muted-foreground">
+                Connect with other users and arrange book exchanges
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
