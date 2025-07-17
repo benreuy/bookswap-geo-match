@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      books: {
+        Row: {
+          author: string
+          available_for_swap: boolean
+          condition: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          genre: string | null
+          id: string
+          isbn: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author: string
+          available_for_swap?: boolean
+          condition: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          isbn?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author?: string
+          available_for_swap?: boolean
+          condition?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          isbn?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
