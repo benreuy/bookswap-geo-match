@@ -49,8 +49,8 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Connect with other users and arrange book exchanges
             </p>
-            <Button disabled className="w-full" variant="outline">
-              Coming Soon
+            <Button onClick={() => navigate('/find-books')} className="w-full" variant="default">
+              Find & Swap Books
             </Button>
           </div>
         </div>

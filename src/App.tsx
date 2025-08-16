@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Library from "./pages/Library";
 import Wishlist from "./pages/Wishlist";
+import FindBooks from "./pages/FindBooks";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/useAuth";
 import { Layout } from "./components/Layout";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/" element={<Layout><Index /></Layout>} />
             <Route path="/library" element={<Layout><Library /></Layout>} />
             <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
+            <Route path="/find-books" element={<Layout><FindBooks /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,5 +1,5 @@
 
-import { BookOpen, Heart, Home, LogOut } from "lucide-react";
+import { BookOpen, Heart, Home, LogOut, Search } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,7 @@ const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "My Library", url: "/library", icon: BookOpen },
   { title: "Wishlist", url: "/wishlist", icon: Heart },
+  { title: "Find Books", url: "/find-books", icon: Search },
 ];
 
 export function AppSidebar() {
