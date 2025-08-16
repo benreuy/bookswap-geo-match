@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BookCard } from "@/components/BookCard";
+import { TestDataButton } from "@/components/TestDataButton";
 
 interface Book {
   id: string;
@@ -247,7 +248,8 @@ export default function FindBooks() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-8">
+          <TestDataButton />
+          <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Find Books</h1>
             <p className="text-muted-foreground mt-2">
