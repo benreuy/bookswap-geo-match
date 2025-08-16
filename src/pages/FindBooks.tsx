@@ -20,33 +20,187 @@ interface Book {
   available_for_swap: boolean;
   created_at: string;
   user_id: string;
+  profiles?: {
+    display_name?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  };
+}
+
+interface EnhancedBook extends Book {
+  distance?: number;
+  isWishlistMatch?: boolean;
+  isDoubleMatch?: boolean;
+  matchScore?: number;
 }
 
 export default function FindBooks() {
   const { user } = useAuth();
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<EnhancedBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [selectedCondition, setSelectedCondition] = useState<string>("");
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userWishlist, setUserWishlist] = useState<any[]>([]);
+  const [userBooks, setUserBooks] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
-      fetchAvailableBooks();
+      Promise.all([
+        fetchUserData(),
+        fetchAvailableBooks()
+      ]);
     }
   }, [user]);
 
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch user profile with coordinates
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setUserProfile(profile);
+
+      // Fetch user's wishlist
+      const { data: wishlist } = await supabase
+        .from("wishlists")
+        .select("*")
+        .eq("user_id", user.id);
+      setUserWishlist(wishlist || []);
+
+      // Fetch user's books
+      const { data: userBooks } = await supabase
+        .from("books")
+        .select("*")
+        .eq("user_id", user.id);
+      setUserBooks(userBooks || []);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const checkDoubleMatch = async (bookOwnerId: string, bookTitle: string, bookAuthor: string): Promise<boolean> => {
+    // Check if the book owner wants any of our books
+    const { data: ownerWishlist } = await supabase
+      .from("wishlists")
+      .select("title, author")
+      .eq("user_id", bookOwnerId);
+
+    if (!ownerWishlist) return false;
+
+    return userBooks.some(userBook => 
+      ownerWishlist.some(wish => 
+        wish.title.toLowerCase().includes(userBook.title.toLowerCase()) ||
+        userBook.title.toLowerCase().includes(wish.title.toLowerCase())
+      )
+    );
+  };
+
   const fetchAvailableBooks = async () => {
     try {
-      const { data, error } = await supabase
+      // First get books
+      const { data: booksData, error: booksError } = await supabase
         .from("books")
         .select("*")
         .eq("available_for_swap", true)
-        .neq("user_id", user?.id) // Exclude user's own books
+        .neq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setBooks(data || []);
+      if (booksError) throw booksError;
+
+      // Then get profiles for each book owner
+      const userIds = [...new Set(booksData?.map(book => book.user_id) || [])];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, latitude, longitude, address")
+        .in("user_id", userIds);
+
+      // Combine books with their owner profiles
+      const booksWithProfiles = booksData?.map(book => ({
+        ...book,
+        profiles: profilesData?.find(profile => profile.user_id === book.user_id)
+      })) || [];
+
+      // Enhance books with distance and match information
+      const enhancedBooks: EnhancedBook[] = await Promise.all(
+        booksWithProfiles.map(async (book) => {
+          let distance: number | undefined;
+          let isWishlistMatch = false;
+          let isDoubleMatch = false;
+          let matchScore = 0;
+
+          // Calculate distance if both users have coordinates
+          if (userProfile?.latitude && userProfile?.longitude && 
+              book.profiles?.latitude && book.profiles?.longitude) {
+            distance = calculateDistance(
+              userProfile.latitude,
+              userProfile.longitude,
+              book.profiles.latitude,
+              book.profiles.longitude
+            );
+          }
+
+          // Check if book is in user's wishlist
+          isWishlistMatch = userWishlist.some(wish => 
+            wish.title.toLowerCase().includes(book.title.toLowerCase()) ||
+            book.title.toLowerCase().includes(wish.title.toLowerCase())
+          );
+
+          // Check for double match
+          if (isWishlistMatch) {
+            isDoubleMatch = await checkDoubleMatch(book.user_id, book.title, book.author);
+          }
+
+          // Calculate match score for sorting
+          if (isDoubleMatch) matchScore = 1000; // Highest priority
+          else if (isWishlistMatch) matchScore = 100; // High priority
+          else matchScore = 0;
+
+          // Subtract distance to prioritize closer books within same match tier
+          if (distance !== undefined) {
+            matchScore -= distance;
+          }
+
+          return {
+            ...book,
+            distance,
+            isWishlistMatch,
+            isDoubleMatch,
+            matchScore
+          };
+        })
+      );
+
+      // Sort by match score (highest first), then by distance (closest first)
+      enhancedBooks.sort((a, b) => {
+        if (b.matchScore !== a.matchScore) {
+          return b.matchScore - a.matchScore;
+        }
+        if (a.distance !== undefined && b.distance !== undefined) {
+          return a.distance - b.distance;
+        }
+        return 0;
+      });
+
+      setBooks(enhancedBooks);
     } catch (error) {
       console.error("Error fetching available books:", error);
       toast({
@@ -162,25 +316,50 @@ export default function FindBooks() {
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
                 Found {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} available for swap
+                {userProfile?.address && " (sorted by distance and matches)"}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredBooks.map((book) => (
                 <div key={book.id} className="relative">
-                  <BookCard
-                    book={book}
-                    viewMode="grid"
-                    onEdit={() => {}} // No edit for other users' books
-                    onDelete={() => {}} // No delete for other users' books
-                  />
+                  <div className="relative">
+                    {book.isDoubleMatch && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <span className="bg-gradient-primary text-white text-xs px-2 py-1 rounded-full font-semibold">
+                          🔄 Double Match!
+                        </span>
+                      </div>
+                    )}
+                    {book.isWishlistMatch && !book.isDoubleMatch && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <span className="bg-primary text-white text-xs px-2 py-1 rounded-full font-semibold">
+                          ⭐ Wishlist Match
+                        </span>
+                      </div>
+                    )}
+                    <BookCard
+                      book={book}
+                      viewMode="grid"
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                    />
+                  </div>
                   <div className="absolute bottom-2 left-2 right-2">
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleContactOwner(book.id)}
-                    >
-                      Request Swap
-                    </Button>
+                    <div className="space-y-1">
+                      {book.distance && (
+                        <p className="text-xs text-muted-foreground text-center bg-background/80 rounded px-1">
+                          📍 {book.distance.toFixed(1)} km away
+                        </p>
+                      )}
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleContactOwner(book.id)}
+                        variant={book.isDoubleMatch ? "default" : book.isWishlistMatch ? "secondary" : "outline"}
+                      >
+                        {book.isDoubleMatch ? "Mutual Swap!" : "Request Swap"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
