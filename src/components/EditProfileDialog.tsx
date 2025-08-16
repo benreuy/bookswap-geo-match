@@ -14,8 +14,6 @@ interface Profile {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
-  bio: string | null;
-  location: string | null;
   address: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -52,8 +50,6 @@ export const EditProfileDialog = ({ open, onOpenChange, onProfileUpdated }: Edit
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<Partial<Profile>>({
     display_name: '',
-    bio: '',
-    location: '',
     address: '',
   });
 
@@ -112,8 +108,6 @@ export const EditProfileDialog = ({ open, onOpenChange, onProfileUpdated }: Edit
       const profileData = {
         user_id: user.id,
         display_name: profile.display_name || null,
-        bio: profile.bio || null,
-        location: profile.location || null,
         address: profile.address || null,
         latitude: coordinates?.lat || null,
         longitude: coordinates?.lng || null,
@@ -154,7 +148,7 @@ export const EditProfileDialog = ({ open, onOpenChange, onProfileUpdated }: Edit
             Edit Profile
           </DialogTitle>
           <DialogDescription>
-            Update your profile information and address for location-based book searches.
+            Update your address for location-based book searches.
           </DialogDescription>
         </DialogHeader>
         
@@ -170,16 +164,6 @@ export const EditProfileDialog = ({ open, onOpenChange, onProfileUpdated }: Edit
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={profile.location || ''}
-              onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-              placeholder="e.g., New York, NY"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="address">Full Address</Label>
             <Input
               id="address"
@@ -190,17 +174,6 @@ export const EditProfileDialog = ({ open, onOpenChange, onProfileUpdated }: Edit
             <p className="text-xs text-muted-foreground">
               Provide your full address to enable distance-based book search results.
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={profile.bio || ''}
-              onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-              placeholder="Tell others about yourself and your reading interests..."
-              rows={3}
-            />
           </div>
 
           <div className="flex justify-end gap-2">
