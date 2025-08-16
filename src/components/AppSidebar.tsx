@@ -4,6 +4,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileButton } from "@/components/EditProfileDialog";
 import {
   Sidebar,
   SidebarContent,
@@ -86,7 +87,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t">
-        <div className="p-2">
+        <div className="p-2 space-y-2">
           {state === "expanded" && user && (
             <div className="mb-2 px-2">
               <p className="text-sm font-medium truncate">
@@ -94,6 +95,9 @@ export function AppSidebar() {
               </p>
             </div>
           )}
+          
+          {state === "expanded" && <ProfileButton />}
+          
           <Button 
             variant="ghost" 
             size="sm" 
